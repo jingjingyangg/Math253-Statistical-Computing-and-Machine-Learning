@@ -1,0 +1,141 @@
+---
+title: "Math 253 Assignment 6"
+author: "Jingjing Yang"
+date: "11-09-2015"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+
+# Theory Assignment
+## 6.8.1 
+### (a) Which of the three models with k predictors has the smallest training RSS?
+The best subset selection because it checks all possible combinations of model terms and searches for the one with the smallest training RSS.
+
+### (b) Which of the three models with k predictors has the smallest test RSS?
+None of the three models guarantees the smallest test RSS. In some cases, the best subset does not perform as well as the other two models. Sometimes p is computationally too large for best subset model. 
+
+### (c) 
+i. The predictors in the k-variable model identified by forward stepwise are a subset of the predictors in the (k+1)-variable model identified by forward stepwise selection.
+TRUE. The (k+1)-variable model contains all best model terms chosen in the k-variable model, plus the additional one.
+
+ii. The predictors in the k-variable model identified by back- ward stepwise are a subset of the predictors in the (k + 1)- variable model identified by backward stepwise selection.
+TRUE. Similarly the (k+1)-variable model contains all model terms chosen in the k-variable but the last one. 
+
+iii. The predictors in the k-variable model identified by back- ward stepwise are a subset of the predictors in the (k + 1)- variable model identified by forward stepwise selection.
+FALSE. They do not necessarily overlap.
+
+iv. The predictors in the k-variable model identified by forward stepwise are a subset of the predictors in the (k+1)-variable model identified by backward stepwise selection.
+FALSE. Again they do not necessarily overlap.
+
+v. The predictors in the k-variable model identified by best subset are a subset of the predictors in the (k + 1)-variable model identified by best subset selection.
+FALSE. That cannot be possible because the best subset selection contains all possible model term combinations; no other set can contain it. 
+
+## 6.8.2
+### (a) The lasso, relative to least squares, is 
+iii. Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance. Because lasso decreases the coefficients of some model terms to be zero, it is more restricting, thus has the possibility of reducing variance in predictions. 
+
+### (b) The ridge, relative to least squares, is 
+iii. Less flexible and hence will give improved prediction accuracy when its increase in bias is less than its decrease in variance. Ridge is less restricting than lasso, because it only draws some coefficients close to, but never exactly zero. But everything in (a) applies there as well.
+
+### (c) Non-linear models, relative to least squares, is
+ii. More flexible and hence will give improved prediction accu- racy when its increase in variance is less than its decrease in bias. Non-linear models are more flexible, hence more variance. 
+
+# Applied Assignment
+## 6.9.8 Predict # of applications received
+```{r}
+library(ISLR)
+library(glmnet)
+data(College)
+```
+
+### (a) Create a training and test set
+```{r}
+index <- sample(nrow(College), floor(0.5 * nrow(College)))
+training <- College[index,,drop = FALSE]
+test <- College[-index,,drop = FALSE]
+```
+
+### (b) Fit a linear model using least squares
+```{r}
+lm <- lm(Apps~., data = training)
+lm_pred <- predict(lm, newdata = test)
+rss <- sum((lm_pred - test$Apps)^2)
+tss <- sum((test$Apps - mean(test$Apps))^2)
+#R-squared value for the linear model:
+(R2_linear <- 1 - (rss/tss))
+```
+
+### (c) Fit a ridge model, with lambda chosen by cross-validation
+```{r}
+predictor <- as.matrix(training[,-c(1:2)])
+response <- training[,2]
+
+ridge <- cv.glmnet(predictor, response, alpha = 0)
+best_lambda <- ridge$lambda.min
+
+ridge_mod <- glmnet(predictor, response, alpha = 0, lambda = best_lambda)
+
+test_predictor <- as.matrix(test[, -c(1:2)])
+ridge_pred <- predict(ridge_mod, test_predictor)
+rss <- sum((ridge_pred - test$Apps)^2)
+tss <- sum((test$Apps - mean(test$Apps))^2)
+
+#R-squared value for the ridge model:
+(R2_ridge <- 1- (rss/tss))
+```
+
+### (d) Fit a lasso model, with lambda chosen by cross-validation
+```{r}
+lasso <- cv.glmnet(predictor, response, alpha = 1)
+best_lambda <- lasso$lambda.min
+
+lasso_mod <- glmnet(predictor, response, alpha = 1, lambda = best_lambda)
+test_predictor <- as.matrix(test[, -c(1:2)])
+lasso_pred <- predict(lasso_mod, test_predictor)
+rss <- sum((lasso_pred - test$Apps)^2)
+tss <- sum((test$Apps - mean(test$Apps))^2)
+
+#R-squared value for the lasso model:
+(R2_lasso <- 1- (rss/tss))
+
+names(coef(lasso_mod)[,1][coef(lasso_mod)[,1]==0])
+sum(coef(lasso_mod)[,1]==0)
+```
+
+### (e) Fit a PCR model, with M chosen by cross-validation
+```{r}
+library(pls)
+pcr.fit <- pcr(Apps~.,data = training, scale=TRUE, validation = "CV")
+validationplot(pcr.fit, val.type = "MSEP") # Lowest at M = 17
+pcr_pred <- predict(pcr.fit, test,ncomp = 17)
+
+rss <- sum((pcr_pred - test$Apps)^2)
+tss <- sum((test$Apps - mean(test$Apps))^2)
+
+#R-squared value for the lasso model:
+(R2_PCR <- 1- (rss/tss))
+```
+
+### (e) Fit a PLS model, with M chosen by cross-validation
+```{r}
+library(pls)
+pls.fit <- plsr(Apps~.,data = training, scale=TRUE, validation = "CV")
+validationplot(pls.fit, val.type = "MSEP") # Lowest at M = 6
+pls_pred <- predict(pls.fit, test,ncomp = 6)
+
+rss <- sum((pls_pred - test$Apps)^2)
+tss <- sum((test$Apps - mean(test$Apps))^2)
+
+#R-squared value for the lasso model:
+(R2_PLS <- 1- (rss/tss))
+```
+
+### (g) Comments on the results obtained
+All these models seem to perform equally well. The R-squared values for all of them are approximately 0.9.

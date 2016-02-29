@@ -1,0 +1,5 @@
+require(mosaicData)
+head(Whickham)
+mod1 <- glm(outcome == "Alive"~smoker, data = Whickham, family = "binomial")
+mod2 <- glm(outcome == "Alive"~smoker + age, data = Whickham, family = "binomial")
+head(predict(mod2,type = "response"))

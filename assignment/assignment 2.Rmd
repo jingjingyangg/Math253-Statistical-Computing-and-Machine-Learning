@@ -1,0 +1,220 @@
+---
+title: "Math 253 Assignment 2"
+author: "Jingjing Yang"
+date: "Sept. 23, 2015"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+
+<!-- Don't edit the material above this line -->
+
+# Computing Assignment 1: Work through Section 3.6
+
+## Section 3.6.2
+```{r}
+library(MASS)
+library(ISLR)
+names(Boston)
+lm.fit = lm(medv~lstat, data = Boston)
+lm.fit
+summary(lm.fit)
+names(lm.fit)
+coef(lm.fit)
+confint(lm.fit)
+predict(lm.fit, data.frame(lstat=c(5,10,15)), interval = "confidence")
+predict(lm.fit, data.frame(lstat=c(5,10,15)), interval = "prediction")
+plot(Boston$lstat, Boston$medv)
+abline(lm.fit)
+abline(lm.fit, lwd = 3)
+abline(lm.fit, lwd = 3, col = "red")
+plot(Boston$lstat, Boston$medv, col = "red")
+plot(Boston$lstat, Boston$medv, pch = 20)
+plot(Boston$lstat, Boston$medv, pch = "+")
+plot(Boston$lstat, Boston$medv, pch = 1:20)
+plot(lm.fit)
+plot(predict(lm.fit), residuals(lm.fit))
+plot(predict(lm.fit), rstudent(lm.fit))
+plot(hatvalues(lm.fit))
+which.max(hatvalues(lm.fit))
+lm.fit = lm(medv~lstat + age, data = Boston)
+```
+
+
+## Section 3.6.3
+```{r}
+lm.fit3 = lm(medv~lstat + age, data = Boston)
+summary(lm.fit3)
+lm.fit4 = lm(medv~.,data = Boston)
+summary(lm.fit4)
+library(car)
+vif(lm.fit4)
+lm.fit5 <- lm(medv~.-age, data = Boston)
+summary(lm.fit5)
+```
+
+
+## Section 3.6.4
+```{r}
+summary(lm(medv~lstat*age, data = Boston))
+```
+
+## Section 3.6.5
+```{r}
+lm.fit2 = lm(medv~lstat+I(lstat^2), data = Boston)
+summary(lm.fit2)
+anova(lm.fit, lm.fit2)
+plot(lm.fit2)
+lm.fit6 = lm(medv~poly(lstat, 5), data = Boston)
+summary(lm.fit6)
+summary(lm(medv~log(rm), data = Boston))
+```
+
+## Section 3.6.6
+```{r}
+names(Carseats)
+lm.fit7 = lm(Sales~. + Income:Advertising + Price:Age, data = Carseats)
+summary(lm.fit7)
+with(Carseats, contrasts(ShelveLoc))
+```
+
+## Section 3.6.7
+```{r}
+LoadLibraries <- function(){
+  library(ISLR)
+  library(MASS)
+  print("The libraries have been loaded.")
+}
+```
+
+# Computing Assignment 2: Problem 13 in 3.7
+### (a) Create a feature X
+```{r}
+x <- rnorm(100, mean = 0.5, sd = 0.15)
+```
+
+### (b) Create noise
+```{r}
+eps <- rnorm(100, mean = 0.125, sd = 0.05)
+```
+
+### (c) Generate vector y
+```{r}
+y <- -1 + 0.5*x + eps
+```
+
+The length of the vector y:
+```{r}
+length(y)
+```
+
+The value of $β_0$ is -1. The value of $β_1$ is 0.5. 
+
+### (d) Plot relationship between x and y
+```{r}
+plot(x,y)
+```
+
+x and y seems to have a very strong linear relationship.
+
+### (e) Fit a least squares linear model
+```{r}
+lm1 <- lm(y~x)
+summary(lm1)
+```
+
+$β_0$ hat is  -0.86, and $β_1$ hat is 0.48. 
+
+### (f) Display the least squares line
+```{r}
+plot(x,y)
+abline(lm1, col = "red")
+abline(a=-1+eps, b = 0.5*x, col = "blue")
+legend(0.6233421,-0.7269051, "population", bg="light blue")
+legend(0.6065054,-0.5716406, "least squares", bg="red")
+```
+
+### (g) Fit a polynomial regression model
+```{r}
+lm2 <- lm(y~x+I(x^2))
+summary(lm2)
+```
+
+I don't think the quadratic term improves the model fit because the R-squared value of the second model is only slightly larger than the first one.
+
+### (h) Decrease the noise and repeat
+```{r}
+eps_s <- rnorm(100, mean = 0.125, sd = 0.01)
+y_s <- -1 + 0.5*x + eps_s
+plot(x,y_s)
+lm2 <- lm(y_s~x)
+summary(lm2)
+```
+
+I decreased the sd of the error term to 0.01 and the R-squred value increased to as high as 0.98.
+
+### (i) Increase the noise and repeat
+```{r}
+eps_l <- rnorm(100, mean = 0.125, sd = 0.1)
+y_l <- -1 + 0.5*x + eps_l
+plot(x,y_l)
+lm3 <- lm(y_l~x)
+summary(lm3)
+```
+
+I increased the sd of the error term to 0,1 and the R-squared value dropped to 0.46. 
+
+### (j) Confidence interval for $β_0$ and $β_1$ 
+The confidence interval for $β_0$ and $β_1$ based on the original data set:
+```{r}
+confint(lm1)
+```
+
+The confidence interval for $β_0$ and $β_1$ based on the less noisy data set:
+```{r}
+confint(lm2)
+```
+
+The confidence interval for $β_0$ and $β_1$ based on the noisier data set:
+```{r}
+confint(lm3)
+```
+
+
+# Theory Assignment
+## Reading Question 1: page 66
+The formulas assume that the errors for each observation are uncorrelated with the common variance, but in Fig.3.1 we can clearly see that errors are definitely related with variance -- larger variance leads to bigger errors.  
+
+## Reading Question 2: page 77
+When p>n it is not possible to fit the multiple linear regression model using least squares because the maximum number of variables a model can possibly have is n, when every single observation has been given a variable. 
+
+## ISL 3.7.3
+### (a) Which answer is correct and why?
+I believe that statement iii is correct because the coefficient before $X_5$ is negavtive. When the GPA is high enough, the decreasing effect of the interaction term on the starting salary will outweight the positive coefficient of the Gender term.
+
+### (b) Predict the salary of a female with IQ of 110 and GPA of 4.0
+```{r}
+S = 50 + 20*4 + 0.07*110 + 35*1 + 0.01 * 4.0*110 - 10*4.0
+```
+
+### (c) Interaction term
+False. The coefficient for the interaction being very small only means that given a fixed value of IQ, the change in GPA doesn't lead to a big change in the starting salary, but it doesn't give us evidence of a lack of interation. It could be that the data itself has extremely low variance, so even a small conefficient translates to strong interaction. 
+
+## ISL 3.7.4
+### (a) Given a true linear relationship, which model has lower training RSS?
+The training RSS is going to as with a more flexible model, so the training RSS for the cubic regression will be smaller than that of the linear regression.
+
+### (b) Given a true linear relationship, which model has lower test RSS?
+Since the true relationship between X and Y is linear, the test RSS of the linear model will be small than that of the cubic regression. 
+
+### (c) Given a true non-linear relationship, which model has lower training RSS?
+Similar to the answer to (a), a more flexible model always leads to a smaller training RSS. 
+
+### (d) Given a true non-linear relationship, which model has lower test RSS?
+It depends on the true relationship. If the true relationship is quite close to be linear, then the linear model will have the lower test RSS. But if it's far from linear, then the more flexible model will fit the data better, hence has the lower test RSS. 

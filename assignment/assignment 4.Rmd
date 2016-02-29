@@ -1,0 +1,210 @@
+---
+title: "Math 253 Assignment 4"
+author: "Jingjing Yang"
+date: "10-15-2015"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+
+#Computing Assignments
+
+##4.7.11 Predict whether a car gets high or low gas mileage
+###(a) Create binary variable mpg01
+```{r}
+library(ISLR)
+car_median <- median(Auto$mpg)
+Auto$mpg01 <- ifelse(Auto$mpg>car_median,1,0)
+```
+
+###(b) What other features seem useful in predicting mpg01
+```{r}
+with(Auto, boxplot(cylinders~mpg01))
+with(Auto, boxplot(displacement~mpg01))
+with(Auto, boxplot(horsepower~mpg01))
+with(Auto, boxplot(weight~mpg01))
+with(Auto, boxplot(acceleration~mpg01))
+with(Auto, boxplot(year~mpg01))
+with(Auto, boxplot(origin~mpg01))
+```
+With the above boxplots, I find that cylinders, displacement, horsepower, weight and origin seem to have relatively stronger relationship with mpg01, thus more likely to be useful in predicting mpg01. 
+
+###(c) Split the data into training and test sets.
+```{r}
+nrow(Auto)
+training <- Auto[c(1:150),]
+test <- Auto[-c(1:150),]
+```
+
+###(d) Perform LDA on the training and test data
+```{r}
+library(MASS)
+lda_fit <- lda(mpg01~cylinders + displacement + horsepower + weight + origin, data = training)
+lda_pred <- predict(lda_fit, test)
+table(lda_pred$class, test$mpg01)
+1 - mean(lda_pred$class == test$mpg01)
+```
+The test error with a linear discriminant analysis is 0.22.
+
+###(e) Perform QDA on the training and test data
+```{r}
+qda_fit <- qda(mpg01~cylinders + displacement + horsepower + weight + origin, data = training)
+qda_pred <- predict(qda_fit, test)
+table(qda_pred$class, test$mpg01)
+1 - mean(qda_pred$class == test$mpg01)
+```
+The test error with a quadratic discriminant analysis is 0.12.
+
+###(f) Perform logistic regression on the training and test data
+```{r}
+#training data
+glm_fit <- glm(mpg01~cylinders + displacement + horsepower + weight + origin, data = training, family = binomial)
+glm_probs <- predict(glm_fit, data = training, type = "response")
+glm_pred <- rep("0", 150)
+glm_pred[glm_probs>0.5] = "1"
+table(glm_pred, training$mpg01)
+mean(glm_pred == training$mpg01)
+
+#test data
+glm_probs_test <- predict(glm_fit, data=test, type = "response")
+glm_pred <- rep("0", 242)
+glm_pred[glm_probs>0.5] = "1"
+table(glm_pred, test$mpg01)
+1 - mean(glm_pred == test$mpg01)
+```
+The test error with a logistic regression is 0.54. 
+
+###(g) Perform KNN on the training and test data
+```{r}
+library(class)
+train_X <- cbind(training$cylinders, training$displacement, training$horsepower, training$weight, training$origin)
+test_X <- cbind(test$cylinders, test$displacement, test$horsepower, test$weight, test$origin)
+train_direction <- factor(training$mpg01)
+
+set.seed(1)
+knn_pred <- knn(train_X, test_X, train_direction, k = 1)
+table(knn_pred, test$mpg01)
+1 - mean(knn_pred == test$mpg01)
+
+knn_pred2 <- knn(train_X, test_X, train_direction, k = 2)
+table(knn_pred2, test$mpg01)
+1 - mean(knn_pred2 == test$mpg01)
+
+knn_pred3 <- knn(train_X, test_X, train_direction, k = 3)
+table(knn_pred3, test$mpg01)
+1 - mean(knn_pred3 == test$mpg01)
+
+knn_pred6 <- knn(train_X, test_X, train_direction, k = 6)
+table(knn_pred6, test$mpg01)
+1 - mean(knn_pred6 == test$mpg01)
+
+knn_pred10 <- knn(train_X, test_X, train_direction, k = 10)
+table(knn_pred10, test$mpg01)
+1 - mean(knn_pred10 == test$mpg01)
+```
+When K = 1, the test error is 0.178. When K = 3, the test error is 0.186. When K = 6, the test error is 0.235. When K = 10, the test error is 0.227. So K = 1 seems to have performed best. 
+
+##4.7.13 Predict whether a suburb has a crime rate above or below median
+```{r}
+median <- median(Boston$crim)
+# If a suburb has a crime rate higher than the median, it gets a "0" for its safety variable, and 1 otherwise.
+Boston$safety <- ifelse(Boston$crim > median,0,1)
+training <- Boston[c(1:200),]
+test <- Boston[-c(1:200),]
+```
+
+###Determine which predictors might be useful
+```{r}
+boxplot(Boston$zn~Boston$safety)
+boxplot(Boston$indus~Boston$safety)
+boxplot(Boston$chas~Boston$safety)
+boxplot(Boston$nox~Boston$safety)
+boxplot(Boston$rm~Boston$safety)
+boxplot(Boston$age~Boston$safety)
+boxplot(Boston$dis~Boston$safety)
+boxplot(Boston$rad~Boston$safety)
+boxplot(Boston$tax~Boston$safety)
+boxplot(Boston$ptratio~Boston$safety)
+boxplot(Boston$black~Boston$safety)
+boxplot(Boston$lstat~Boston$safety)
+boxplot(Boston$medv~Boston$safety)
+```
+With the above boxplots, I find that zn, indus, nox,age,dis, rad, and tax seem to have relatively stronger relationship with safety, thus more likely to be useful in predicting safety.
+
+### Logistic Regression
+```{r}
+glm_fit <- glm(safety~zn + indus + nox + age + dis + rad + tax, data = training, family = binomial)
+summary(glm_fit)
+```
+
+Since the P-value for zn, rad and tax are relatively large, we will eliminate those variables from the model. The following is the logistic regression applied to the new model.
+```{r}
+glm_fit <- glm(safety~indus + nox + age + dis, data = training, family = binomial)
+glm_probs <- predict(glm_fit, data = test, type = "response")
+glm_pred <- rep("1", 306)
+glm_pred[glm_probs < 0.5] = "0"
+table(glm_pred, test$safety)
+#correct rate
+mean(glm_pred == test$safety)
+```
+
+### LDA
+```{r}
+lda_fit <- lda(safety~indus + nox + age+dis, data = training)
+lda_pred <- predict(lda_fit, test)
+table(lda_pred$class, test$safety)
+#correct rate
+mean(lda_pred$class == test$safety)
+```
+
+### KNN
+```{r}
+train_X <- cbind(training$indus, training$nox, training$age, training$dis)
+test_X <- cbind(test$indus, test$nox, test$age, test$dis)
+train_direction <- factor(training$safety)
+
+set.seed(1)
+
+# K = 1
+knn_pred <- knn(train_X,test_X,train_direction, k = 1)
+table(knn_pred, test$safety)
+mean(knn_pred == test$safety)
+
+# K = 2
+knn_pred2 <- knn(train_X,test_X,train_direction, k = 2)
+table(knn_pred2, test$safety)
+mean(knn_pred2 == test$safety)
+
+# K = 4
+knn_pred4 <- knn(train_X,test_X,train_direction, k = 4)
+table(knn_pred4, test$safety)
+mean(knn_pred4 == test$safety)
+
+# K = 6
+knn_pred6 <- knn(train_X,test_X,train_direction, k = 6)
+table(knn_pred6, test$safety)
+mean(knn_pred6 == test$safety)
+
+```
+
+In conclusion, the KNN algorithm has the highest correct prediction rate of about 79%, with monior fluaction given different K values. 
+
+#Theory Assignments
+##4.7.1
+### To show equation (4.2) and (4.3) are equivalent: 
+<img src="/Users/JingjingYang/Dropbox/fall 2015/253 statistical computing/assignment/IMG_1255.jpeg" />
+
+
+##4.7.8
+We shou choose the logistic regression model because when K = 1, the training error of KNN is just zero, which means the test error rate is 36%, higher than that of the logistic regression.
+
+##4.7.9 
+###(a) 27% of the people with an odds of 0.37 of defaulting actually default.
+
+###(b) The odds that she will default is 0.19. 

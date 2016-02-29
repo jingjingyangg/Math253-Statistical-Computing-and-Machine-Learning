@@ -1,0 +1,94 @@
+---
+title: "Math 253 Assignment 7"
+author: "Jingjing Yang"
+date: "11/30/2015"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+#Theory Assignment
+## 7.9.3 & 4
+<img src="/Users/JingjingYang/Dropbox/fall 2015/253 statistical computing/assignment/IMG_1326.jpeg" />
+
+## 7.9.5
+###(a) Training RSS
+When lambda approaches infinity, the first term of both functions become negligible. The second curve has a higher degree polynomilal, which makes it more flexible, therefore has smaller training RSS. 
+
+###(b) Testing RSS
+We have no way of knowing which curve has a smaller test RSS.
+
+###(c)
+When lamdba = 0, they both have the same training and test RSS.
+
+#Applied Assignment
+## 7.9.11 Backfitting in the context of multiple linear regression
+###(a) Generate Y, X1 and X2
+```{r}
+n <- 100
+set.seed(100)
+x1 <- rnorm(n, sd = 1)
+x2 <- rnorm(n, sd = 2)
+y <- rnorm(n, sd = 3)
+```
+
+###(b)Initialize beta1hat
+```{r}
+beta1 <- 5
+```
+
+###(c) Keep beta1hat fixed
+```{r}
+a <- y - beta1 * x1
+beta2 <- lm(a~x2)$coef[2]
+```
+
+###(d)Keep beta2hat fixed
+```{r}
+a <- y - beta2 * x2
+beta1 <- lm(a~x1)$coef[2]
+```
+
+###(e) Repeat (c) and (d) 1000 times
+```{r}
+res=matrix(NA,3,1000,dimnames=list(c("beta0","beta1","beta2"),paste(1:1000)))
+for (i in 1:1000){
+  a <- y - beta1 * x1
+  beta2 <- lm(a~x2)$coef[2]
+  a <- y - beta2 * x2
+  beta1 <- lm(a~x1)$coef[2]
+  beta0 <- lm(a~x1)$coef[1]
+  res["beta0", i] = beta0
+  res["beta1", i] = beta1
+  res["beta2", i] = beta2
+}
+
+plot(1:1000, res[1,], type = "l", ylim = range(res), col = "blue", xlab = "iteration", ylab = "coefficient estimate", lwd=3)
+lines(res[2,], col="green", lwd=3)
+lines(res[3,], col="tomato", lwd=3)
+```
+
+###(f) Comparison with simply performing multiple linear regression
+```{r}
+fit=lm(y~x1+x2)
+plot(1:1000, res[1,], type = "l", ylim = range(res), col = "blue", xlab = "iteration", ylab = "coefficient estimate", lwd=3)
+lines(res[2,], col="green", lwd=3)
+lines(res[3,], col="tomato", lwd=3)
+abline(h=fit$coef[1],lty=3,lwd=4,col="yellow")
+abline(h=fit$coef[2],lty=3,lwd=4,col="purple")
+abline(h=fit$coef[3],lty=3,lwd=4,col="pink")
+```
+
+###(g) On this dataset, three backfitting iterations were required for the results to converge
+

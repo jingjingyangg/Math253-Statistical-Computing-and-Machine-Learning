@@ -1,0 +1,182 @@
+---
+title: "Math 253 Assignment 1"
+author: "Jingjing Yang"
+date: "Sept. 15, 2015"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+# This is homework 1
+```
+<!-- Don't edit the material above this line -->
+
+# Exercise 1 in ISL Section 2.4
+## (a) Large n, small p 
+When n is extremely large, and p is small, a flexible method performs better 
+because having lots of data gives more basis for detail in fhat.
+
+## (b) Large p, small n
+When p is large, and n is small, an inflexible method performs better because having a small number of observations can easily lead to overfitting. 
+
+## (c) Relationship highly non-linear
+When the relationship between the predictors and response is highly non-linear, a flexible method performs better because it can better capture the non-linearity of the relationship.
+
+## (d) Variance extremely high
+When the variance of the error terms is extremely high, an inflexible method performs better because a flexible model fits too much of the noise (variance) in the problem.
+
+# Exercise 3 in ISL Section 2.4
+## (b) Explain the shapes
+Typical (squared) bias slopes downward because by definition, the less flexible the bigger bias is. 
+Variance slopes upward because more flexible models generates more variance. 
+Training error slopes down because as flexibility increases, the model gets better in picking up the patterns in the training data. 
+Test error first slopes down and then slopes up again because as flexibility exceeds certain point, the model becomes overfitted, which increases the test MSE.
+Bayes (irreducible) error is a horizontal line because it's determined by the unmeasured variables and unmeasurable variation in the data sets. 
+
+# Exercise 6 in ISL Section 2.4
+## Differences between parametric and non-parametric approaches
+Parametric methods first make an assumption about the functional form, or shape of f. It simplies the problem by reducing the problem of estimating f down to one of estimating a set of paramters. The disadvantage of a parametric method is that the method we choose will usually not match the true unknown form of f. Non-parametric methods do not make explicit assumptions about the functional form of f, so they have the potential to accurately fit a wider range of possible shapes for f. But the downside is that they require a very large number of observations to obstain an accurate estimate for f.
+
+
+# Exercise 8 in ISL Section 2.4
+## (a) Read the data
+```{r}
+# download.file("http://www-bcf.usc.edu/~gareth/ISL/College.csv", destfile = "College.csv")
+college_file_name <- "/Users/JingjingYang/Dropbox/fall 2015/253 statistical computing/assignment/assignment1/College.csv"
+college <- read.csv(college_file_name, header = T, na.strings = "?")
+```
+
+## (b) Rownames
+```{r}
+rownames(college) = college[,1]
+college = college[,-1]
+```
+
+## (c)
+### i. Summary
+```{r}
+summary(college)
+```
+
+### ii. Scatterplot matrix
+```{r}
+pairs(college[,1:10])
+```
+
+### iii.Side-by-side boxplots
+```{r}
+plot(Outstate ~ Private, data = college)
+```
+
+### iv. Create "Elite"" variable
+```{r}
+Elite = rep("No", nrow(college))
+Elite[college$Top10perc>50] = "Yes"
+Elite= as.factor(Elite)
+college = data.frame(college,Elite)
+summary(college)
+plot(Outstate ~ Elite, data = college)
+```
+
+### v. Histograms
+```{r}
+#par(mfrow=c(2,2))
+hist(college$S.F.Ratio)
+hist(college$Enroll)
+hist(college$perc.alumni)
+hist(college$Grad.Rate)
+```
+
+### vi. Summary of discovery
+I find that the most of colleges have student/faculty ratio between 10 and 20, with some between 10 and 15. The large majority of colleges have enrollment of less than 1000 each year. There is significant variability in terms of the percentage of alumni who donate. There is slightly less significant, but still relatively big variability in graduation rate.
+
+# Exercise 9 in ISL Section 2.4
+```{r}
+auto_file_name <- "/Users/JingjingYang/Dropbox/fall 2015/253 statistical computing/Auto.csv"
+Auto <- read.csv(auto_file_name, header = T, na.strings = "?")
+```
+
+## (a) Quantitative or quanlitative predictors
+Qualitative predictors include: name, origin, year. All other predictors are quantitative.
+
+## (b) Range of each quantitative predictor
+```{r}
+sapply(Auto[,-c(7,8,9)],range, na.rm= TRUE)
+```
+
+## (c) Mean and sd of each quantitative predictor
+```{r}
+sapply(Auto[,-c(7,8,9)],mean, na.rm= TRUE)
+sapply(Auto[,-c(7,8,9)],sd, na.rm= TRUE)
+```
+
+## (d) Remove 10th through 85th observations
+```{r}
+sapply(Auto[-c(10:85),-c(7,8,9)],range, na.rm=TRUE)
+sapply(Auto[-c(10:85),-c(7,8,9)],mean, na.rm=TRUE)
+sapply(Auto[-c(10:85),-c(7,8,9)],sd, na.rm=TRUE)
+```
+
+## (e) Investigate the predictors graphically
+```{r}
+plot(displacement~year, data = Auto)
+plot(horsepower~year, data = Auto)
+plot(weight~year, data = Auto)
+plot(acceleration~year, data = Auto)
+plot(displacement~origin, data = Auto)
+plot(horsepower~origin, data = Auto)
+plot(weight~origin, data = Auto)
+```
+
+By comparing the scatterplots above, I find that year doesn't make much differende in terms of the displacement, horsepower or weight data, but those three predictors from origin 1 have clearly much wider ranges that those from orgin 2 and 3, almost twice as wide. I also have some discoveries about the relationship between mpg and other predictors, which I will elaborate in the following exercise.
+
+## (f) Predicting gas mileage
+```{r}
+plot(mpg~cylinders, data = Auto)
+plot(mpg~displacement, data = Auto)
+plot(mpg~horsepower, data = Auto)
+plot(mpg~weight, data = Auto)
+plot(mpg~acceleration, data = Auto)
+plot(mpg~year, data = Auto)
+plot(mpg~origin, data = Auto)
+plot(mpg~year, data = Auto)
+```
+
+According to the scatterplots above, I conclude that displacement, horsepower, weight are the predictors most likely to be helpful in predicting mpg because they demonstrate the strongest relationship with mpg. 
+
+
+# Exercise 2 in ISL Section 2.4
+## (a) Factors that affect CEO salary. 
+This is a regression problem and we are most interested in inference. Sample size n is 500, and the number of predictors p is 4. 
+
+## (b) Lauching a new product
+This is a classification problem and we are most interested in prediction. The sample size n is 20, and the number of predictors p is 14.
+
+## (c) Predict change in US dollar
+This is a regression problem and we are most interested in prediction. The sample size is 52, and the number of predictors p is 4. 
+
+# Exercise 7 in ISL Section 2.4
+## (a) Euclidean distance
+Distance between observation 1 and the test point: 3
+Distance between observation 2 and the test point: 2
+Distance between observation 3 and the test point: sqrt(10)
+Distance between observation 4 and the test point: sqrt(5)
+Distance between observation 5 and the test point: sqrt(2)
+Distance between observation 6 and the test point: sqrt(5)
+
+## (b) Given K = 1
+Our prediction will be Green, because the closest observation to the test point observation 5, is Green. 
+
+## (c) Given K = 3
+The three closest observations to the test point are observation 2, observation 5, and observation 4 ( or 6, since they are equally far from the test point). Their values are Red, Green, and Green (Red) respectively. So in this case, the test point can be either Green or Red.
+
+## (d) Best value for K given highly non-linear decision boundry
+If the Bayes decision boundry is highly non-linear, we expect the best value for K to be small, because small K values lead to flexible boundries and large K values have more lindear boundries. 
+

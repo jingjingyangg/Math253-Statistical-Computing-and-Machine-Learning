@@ -1,0 +1,113 @@
+---
+title: "Math 253 Assignment 8"
+author: "Jingjing Yang"
+date: "12/1/2015"
+output: 
+  html_document:
+    fig_height: 3
+    fig_width: 5
+---
+<!-- Don't edit in between this line and the one below -->
+```{r include=FALSE}
+# Don't delete this chunk if you are using the DataComputing package
+library(DataComputing)
+```
+*Source file* 
+```{r, results='asis', echo=FALSE}
+includeSourceDocuments()
+```
+<!-- Don't edit the material above this line -->
+
+#Theory Assignment
+##8.4.1 Draw an example of a partition and decision tree
+<img src="/Users/JingjingYang/Dropbox/fall 2015/253 statistical computing/assignment/IMG_1327.jpeg" />
+
+##8.4.2 Boosting and additive model
+In boosting, trees are grown sequentially: each tree is grown using information from previously grown trees. Each of these trees can be rather small, with just a few terminal nodes, and then combined together. When we set d -- the number of splits in each tree -- to be 1, it consists of only one split. It outputs an additive model since each term involves only a single variable.
+
+## 8.4.3 The Gini index, classification error and cross_entropy
+```{r}
+#p(mk) represents the proportion of training observations in the mth region that are from the kth class. 
+class <- function(x){
+  E = 1 - max(x, 1-x)
+}
+gini <- function(x){
+  return(2*x*(1-x))
+}
+ent <- function(x){
+  return(-((x*log(x))+((1-x)*log(1-x))))
+}
+
+err <- seq(0,1, by = 0.01)
+class_err <- sapply(err, class)
+gini_err <- sapply(err, gini)
+ent_err <- sapply(err, ent)
+df <- data.frame("Gini_Index" = gini_err, "Cross_entropy" = ent_err)
+plot(err, class_err, type = "l", col = "tomato", xlab = "p(m1)", ylab = "value", ylim = c(0,0.8))
+matlines(err, df, col = c("blue", "green"))
+```
+
+##8.4.4 
+<img src="/Users/JingjingYang/Dropbox/fall 2015/253 statistical computing/assignment/IMG_1333.jpeg" />
+
+##8.4.5
+By the majority vote approach, the final classification is Red, because there are more "votes" for Red.
+By the average probability approach, the final classification is Green because the mean of x is less than 0.5.
+```{r}
+x=c(0.1, 0.15, 0.2, 0.2, 0.55, 0.6, 0.6, 0.65, 0.7, 0.75)
+mean(x)
+```
+
+#Programming Assignment
+##8.4.12 Applying boosting, bagging, and random forests and compare their performances
+```{r}
+library(tree)
+library(mosaicData)
+data(CPS85)
+set.seed(100)
+index <- sample(nrow(CPS85), nrow(CPS85) / 2)
+CPS85$married <- ifelse(CPS85$married == "Married", 1, 0)
+CPS85_training <- CPS85[index, ]
+CPS85_test <- CPS85[-index, ]
+```
+
+### Logistic Regression
+```{r}
+logit_fit <- glm(married ~ . , data = CPS85_training, family = "binomial")
+logit_prob <- predict(logit_fit, newdata = CPS85_test, type = "response")
+logit_pred <- ifelse(logit_prob > 0.5, 1, 0)
+table(CPS85_test$married, logit_pred)
+```
+The classification error for logistic regression is 0.3333.
+
+### Bagging
+```{r}
+library (randomForest)
+bag_fit <- randomForest(married ~ . , data = CPS85_training, mtry = length(names(CPS85)), importance =TRUE)
+bag_prob <- predict(bag_fit, newdata = CPS85_test)
+bag_pred <- ifelse(bag_prob > 0.5, 1, 0)
+table(CPS85_test$married, bag_pred)
+```
+The classification error for bagging is 0.3221, with mtry being the number of all variables in the dataset.
+
+### Boosting
+```{r}
+library(gbm)
+boost_fit <- gbm(married ~ . , data = CPS85_training, distribution = "bernoulli", n.trees = 1000)
+boost_prob <- predict(boost_fit, newdata = CPS85_test, n.trees = 1000)
+boost_pred <- ifelse(boost_prob > 0.5, 1, 0)
+table(CPS85_test$married, boost_pred)
+```
+The classification error for boosting is 0.2809, with n.trees = 1000
+
+### Random Forests
+```{r}
+forest_fit <- randomForest(married ~ ., data =CPS85_training, mtry = 3)
+forest_prob <- predict(forest_fit, newdata = CPS85_test)
+forest_pred <- ifelse(forest_prob > 0.5, 1, 0)
+table(CPS85_test$married, forest_pred)
+```
+The classification error for random forrests is 0.2846, with mtry = 3
+
+### Conclusion
+With this dataset, boosting performed best, closely followed by random forests. 
